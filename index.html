@@ -1,0 +1,663 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ziki Why Stuck</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A mock-up of Ziki where every stuck issue says, in one sentence, what it is waiting on, who it is waiting on, and the one action that gets it moving again.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Light mode by design (Ziki light theme); dark only if the viewer explicitly picks it. Layout: a small Ziki mock-up site. ziki.dev top bar + proposal ribbon + tabs (Dashboard · Issues · Stuck · About this proposal). Hash routes swap views. Uses Ziki's zk tokens, Manrope/Inter/Geist Mono and its chip colors. */
+:root{
+  color-scheme:light;
+  --zk-bg:#f5f7fc; --zk-surface:#ffffff; --zk-text:#15121f; --zk-text2:#3e4a63; --zk-muted:#5f6577; --zk-border:#e3e8f2; --zk-divider:#eef1f7;
+  --zk-tint:#eaf2fe; --zk-chip:#f0f2f7; --zk-seg:#eef1f6; --zk-accent:#1f5fd9; --zk-accent-2:#2a6cf0;
+  --zk-ok-bg:#e3f6ec; --zk-ok-fg:#146c43; --zk-bad-bg:#fde8e4; --zk-bad-fg:#a3261a; --zk-bad-bd:#f4b3a8;
+  --zk-warn-bg:#fdf3d7; --zk-warn-fg:#7a4e00; --zk-warn-bd:#f0cd72; --zk-info-bg:#e7f0ff; --zk-info-fg:#1d4fb8;
+  --violet-bg:#ede9fe; --violet-fg:#4c1d95; --indigo-bg:#eef2ff; --indigo-fg:#4338ca; --purple-bg:#f3e8ff; --purple-fg:#7e22ce;
+  --pts-bg:#fff2c9; --pts-fg:#8a5a00; --shadow:0 18px 40px -28px rgba(20,30,70,.35);
+  --head:"Manrope",ui-sans-serif,system-ui,sans-serif; --body:"Inter",ui-sans-serif,system-ui,sans-serif; --mono:"Geist Mono",ui-monospace,monospace;
+}
+:root[data-theme="dark"]{
+  --zk-bg:#0e1118; --zk-surface:#161a24; --zk-text:#eef1f8; --zk-text2:#c3cadb; --zk-muted:#9aa2b8; --zk-border:#262c3b; --zk-divider:#1f2431;
+  --zk-tint:#17233d; --zk-chip:#20263a; --zk-seg:#1b2030; --zk-accent:#6e9bff; --zk-accent-2:#86acff;
+  --zk-ok-bg:#12301f; --zk-ok-fg:#5fd896; --zk-bad-bg:#3a1715; --zk-bad-fg:#ff8f84; --zk-bad-bd:#6e2a24;
+  --zk-warn-bg:#2e2510; --zk-warn-fg:#f2c255; --zk-warn-bd:#6b5420; --zk-info-bg:#17233d; --zk-info-fg:#9db8ff;
+  --violet-bg:#2a1f4a; --violet-fg:#c4b5fd; --indigo-bg:#1e1f4a; --indigo-fg:#a5b4fc; --purple-bg:#2e1a45; --purple-fg:#d8b4fe;
+  --pts-bg:#3a2e10; --pts-fg:#f2c255; --shadow:0 18px 40px -28px rgba(0,0,0,.8); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--zk-bg);color:var(--zk-text);font-family:var(--body);font-size:15px;line-height:1.5}
+h1,h2,h3,h4{font-family:var(--head);margin:0}
+a{color:var(--zk-accent);text-decoration:none}a:hover{text-decoration:underline}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.inner{max-width:1110px;margin:0 auto}
+
+/* top bar */
+.top{background:var(--zk-surface);border-bottom:1px solid var(--zk-border);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--zk-surface)}
+.bar{display:flex;align-items:center;gap:18px;padding-block:13px;overflow-x:auto;scrollbar-width:none}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--head);font-weight:800;font-size:1.05rem;flex:none;color:var(--zk-text)}
+.logo:hover{text-decoration:none}
+.logo svg{width:auto;height:28px}
+.logo{font-size:15px!important;font-weight:600!important;letter-spacing:-.02em}
+.sep{width:1px;height:20px;background:var(--zk-border);flex:none}
+.nav{display:flex;gap:22px;font-weight:600;font-size:.92rem;flex:none;color:var(--zk-text)}
+.right{margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}
+.pillbtn{border:1px solid var(--zk-border);border-radius:999px;padding:7px 14px;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:8px;background:var(--zk-surface);color:var(--zk-text)}
+.mp{width:30px;height:30px;border-radius:50%;background:#0f8a55;color:#fff;font-weight:700;font-size:.75rem;display:grid;place-items:center}
+.pts{background:var(--pts-bg);color:var(--pts-fg);border-radius:999px;padding:6px 12px;font-weight:700;font-size:.85rem;white-space:nowrap}
+.bell{position:relative;font-size:1.1rem}
+.bell b{position:absolute;top:-6px;right:-9px;background:var(--zk-accent);color:#fff;font-size:.62rem;border-radius:999px;padding:0 5px;line-height:16px;font-family:var(--body)}
+@media (max-width:760px){.nav,.sep,.hide-sm{display:none}}
+.tabs{display:flex;gap:4px;border-top:1px solid var(--zk-divider);overflow-x:auto;scrollbar-width:none}
+.tabs a{padding:11px 14px;font-weight:600;font-size:.9rem;color:var(--zk-muted);border-bottom:2px solid transparent;white-space:nowrap;display:flex;gap:7px;align-items:center}
+.tabs a:hover{text-decoration:none;color:var(--zk-text)}
+.tabs a[aria-current="page"]{color:var(--zk-accent);border-bottom-color:var(--zk-accent)}
+.tabs .about{margin-left:auto}
+.cnt{font-size:.7rem;font-weight:800;background:var(--zk-warn-bg);color:var(--zk-warn-fg);border-radius:999px;padding:1px 7px}
+.newtag{font-size:.6rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;background:var(--zk-accent);color:#fff;border-radius:999px;padding:1px 6px}
+.ribbon{background:var(--zk-tint);color:var(--zk-info-fg);font-size:.84rem}
+.ribbon .inner{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-block:8px;flex-wrap:wrap}
+
+/* shared */
+.page{display:flex;flex-direction:column;gap:20px;padding-block:28px 64px}
+.view[hidden]{display:none!important}
+button{font:inherit;cursor:pointer;border-radius:999px;border:1px solid var(--zk-border);background:var(--zk-surface);color:var(--zk-text);padding:9px 16px;font-weight:600;transition:background .15s,transform .1s}
+button:hover{background:var(--zk-tint)}
+button:active{transform:scale(.98)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--zk-accent);outline-offset:2px}
+.primary{background:var(--zk-accent);border-color:var(--zk-accent);color:#fff}
+.primary:hover{background:var(--zk-accent-2)}
+.sm{padding:6px 13px;font-size:.84rem}
+.card{background:var(--zk-surface);border:1px solid var(--zk-border);border-radius:20px;padding:20px 22px;min-width:0}
+.card h2{font-size:1.15rem;font-weight:800;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.card h2 small{font-family:var(--body);font-size:.84rem;font-weight:500;color:var(--zk-muted)}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.ph h1{font-size:clamp(1.6rem,3.2vw,2rem);font-weight:800;letter-spacing:-.02em}
+.ph p{margin:4px 0 0;color:var(--zk-muted)}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.c-low{background:var(--zk-chip);color:var(--zk-text2)}
+.c-medium{background:var(--zk-warn-bg);color:var(--zk-warn-fg);border:1px solid var(--zk-warn-bd)}
+.c-high{background:var(--zk-bad-bg);color:var(--zk-bad-fg)}
+.c-critical{background:var(--zk-bad-bg);color:var(--zk-bad-fg);border:1px solid var(--zk-bad-bd)}
+.s-open{background:var(--zk-info-bg);color:var(--zk-info-fg)}
+.s-in_progress{background:var(--violet-bg);color:var(--violet-fg)}
+.s-resolved{background:var(--zk-ok-bg);color:var(--zk-ok-fg)}
+.st-reported{background:var(--zk-chip);color:var(--zk-text2)}
+.st-confirmed{background:var(--zk-ok-bg);color:var(--zk-ok-fg)}
+.st-ready{background:var(--zk-info-bg);color:var(--zk-info-fg)}
+.r-review{background:var(--indigo-bg);color:var(--indigo-fg)}
+.r-ready{background:var(--zk-ok-bg);color:var(--zk-ok-fg)}
+.r-revision{background:var(--zk-warn-bg);color:var(--zk-warn-fg)}
+.r-merged{background:var(--purple-bg);color:var(--purple-fg)}
+.t{background:var(--zk-chip);color:var(--zk-text2)}
+.num{font-family:var(--mono);font-size:.78rem;color:var(--zk-muted)}
+.stuckbtn{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;font-size:.78rem;border-color:var(--zk-warn-bd);background:var(--zk-warn-bg);color:var(--zk-warn-fg);white-space:nowrap}
+.stuckbtn:hover{background:var(--zk-warn-bg);filter:brightness(.97)}
+.moving{color:var(--zk-accent);font-weight:700;font-size:.8rem;white-space:nowrap}
+.fine{color:var(--zk-ok-fg);font-weight:700;font-size:.8rem;white-space:nowrap}
+.lbl{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--zk-muted);margin:0}
+.empty{color:var(--zk-muted);text-align:center;padding:26px 10px}
+
+/* dashboard */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media (max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.cards{grid-template-columns:1fr}}
+.kpi{background:var(--zk-surface);border:1px solid var(--zk-border);border-radius:20px;padding:20px 22px;display:flex;flex-direction:column;gap:6px}
+.kpi h3{font-size:1rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.kpi .n{font-family:var(--head);font-size:2.1rem;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.84rem;color:var(--zk-muted);display:flex;gap:8px;align-items:center}
+.kpi .s em{font-style:normal;background:var(--zk-chip);border-radius:999px;padding:1px 8px;font-weight:700;color:var(--zk-text2)}
+.kpi.hot{border-color:var(--zk-warn-bd)}
+.kpi.hot .n{color:var(--zk-warn-fg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.alist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column}
+.alist li{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--zk-divider)}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--c);font-size:.74rem;flex:none}
+.alist b{display:block;line-height:1.25}.alist span{font-size:.82rem;color:var(--zk-muted)}
+.dot{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.dot::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.d-wait{color:var(--zk-warn-fg)}.d-work{color:var(--zk-ok-fg)}.d-idle{color:var(--zk-muted)}
+
+/* table */
+.tbl{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:.88rem;min-width:820px}
+thead th{background:var(--zk-tint);color:var(--zk-info-fg);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:13px 12px;font-weight:700;white-space:nowrap}
+thead th:first-child{border-radius:14px 0 0 14px;text-align:center}thead th:last-child{border-radius:0 14px 14px 0}
+tbody td{padding:13px 12px;border-bottom:1px solid var(--zk-divider);vertical-align:middle}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:var(--zk-bg)}
+.votes{font-family:var(--head);font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.ititle b{display:block;font-weight:600;line-height:1.3}
+.seg{display:inline-flex;background:var(--zk-seg);border-radius:999px;padding:4px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 14px;font-size:.86rem;color:var(--zk-muted)}
+.seg button[aria-pressed="true"]{background:var(--zk-surface);color:var(--zk-text);box-shadow:0 2px 6px -3px rgba(0,0,0,.25)}
+
+/* stuck page */
+.groups{display:flex;flex-direction:column;gap:22px}
+.group h3{font-size:1.05rem;font-weight:800;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.glist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.scard{background:var(--zk-surface);border:1px solid var(--zk-border);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.scard .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scard h4{font-size:1rem;font-weight:700;line-height:1.3}
+.scard p{margin:0;font-size:.9rem;color:var(--zk-text2)}
+.scard .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.since{margin-left:auto;font-size:.78rem;font-weight:700;color:var(--zk-warn-fg);white-space:nowrap}
+.scard.done{border-left-color:var(--zk-accent);opacity:.75}
+
+/* issue detail */
+.ihead{display:flex;flex-direction:column;gap:8px}
+.ihead h1{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;letter-spacing:-.015em;text-wrap:balance}
+.ihead .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.why{background:var(--zk-surface);border:1px solid var(--zk-warn-bd);border-radius:20px;padding:22px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px}
+.why.ok{border-color:var(--zk-border)}
+@media (max-width:860px){.why{grid-template-columns:1fr}}
+.why .l,.why .r{display:flex;flex-direction:column;gap:14px;min-width:0}
+.why .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.whytag{display:inline-flex;gap:6px;align-items:center;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--zk-warn-fg);background:var(--zk-warn-bg);border-radius:999px;padding:4px 10px}
+.answer{font-family:var(--head);font-size:1.3rem;font-weight:700;line-height:1.4;margin:0;text-wrap:pretty}
+.answer mark{background:none;color:inherit;font-weight:800;box-shadow:inset 0 -.45em 0 var(--zk-warn-bg)}
+.waiting{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--zk-bg)}
+.waiting b{display:block;line-height:1.2}.waiting span{font-size:.82rem;color:var(--zk-muted)}
+.waiting .since{text-align:right}
+.rule{font-size:.82rem;color:var(--zk-muted);margin:0;padding-left:12px;border-left:3px solid var(--zk-border)}
+.rule code{font-family:var(--mono);font-size:.76rem;color:var(--zk-text2)}
+.track{display:flex;gap:4px}
+.track i{flex:1;height:8px;border-radius:4px;background:var(--zk-border)}
+.track i.done{background:var(--zk-accent)}.track i.stuck{background:var(--zk-warn-fg);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+.tracklbl{display:flex;justify-content:space-between;font-size:.74rem;color:var(--zk-muted);margin-top:-8px;gap:8px}
+.fix{border:1px solid var(--zk-border);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--zk-surface)}
+.fix p{margin:0;font-size:.92rem}
+.fix .btns{display:flex;flex-wrap:wrap;gap:8px}
+.ask{display:flex;flex-wrap:wrap;gap:6px}
+.ask button{padding:6px 12px;font-size:.8rem}
+.reply{font-size:.9rem;background:var(--zk-bg);border-radius:12px;padding:10px 12px;margin:0;animation:rise .3s both}
+@keyframes rise{from{opacity:0;transform:translateY(5px)}}
+.donebox{border:1px solid transparent;background:var(--zk-ok-bg);color:var(--zk-ok-fg);border-radius:16px;padding:12px 14px;font-weight:600;animation:rise .3s both}
+.convo{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+.convo li{display:grid;grid-template-columns:34px 1fr;gap:12px}
+.bub{border:1px solid var(--zk-border);border-radius:4px 14px 14px 14px;padding:10px 13px;font-size:.9rem;min-width:0}
+.bub .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.8rem;color:var(--zk-muted);margin-bottom:3px}
+.bub .meta b{color:var(--zk-text);font-size:.88rem}
+.ctype{font-family:var(--mono);font-size:.7rem;margin-left:auto}
+
+/* about */
+.about{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start}
+@media (max-width:900px){.about{grid-template-columns:1fr}}
+.prose{background:var(--zk-surface);border:1px solid var(--zk-border);border-radius:22px;padding:28px 30px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.prose section{min-width:0}
+.side{min-width:0}
+@media (max-width:520px){.prose{padding:20px}}
+.prose h1{font-size:clamp(1.8rem,4vw,2.4rem);font-weight:800;letter-spacing:-.02em;line-height:1.1;text-wrap:balance}
+.prose h2{font-size:1.25rem;font-weight:800}
+.prose p,.prose li{max-width:66ch;color:var(--zk-text2)}
+.prose p{margin:0}
+.prose ul,.prose ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.prose section{display:flex;flex-direction:column;gap:10px}
+.prose code{font-family:var(--mono);font-size:.84rem;background:var(--zk-chip);border-radius:6px;padding:1px 6px;color:var(--zk-text);overflow-wrap:anywhere}
+.rtable{overflow-x:auto}
+.rtable table{min-width:520px;font-size:.86rem}
+.rtable tbody tr{cursor:default}
+.rtable tbody tr:hover{background:transparent}
+.side{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 120px)}
+@media (max-width:900px){.side{position:static}}
+.side .card{display:flex;flex-direction:column;gap:10px}
+.side ul{margin:0;padding-left:18px;font-size:.9rem;color:var(--zk-text2);display:flex;flex-direction:column;gap:4px}
+.lede{font-size:1.08rem}
+.foot{font-size:.8rem;color:var(--zk-muted);text-align:center;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;background:var(--zk-text);color:var(--zk-surface);padding:10px 18px;border-radius:999px;font-weight:700;transition:all .3s;pointer-events:none;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+/* ---------- Issue Highway: calm Ziki style (quiet card, tint header, dividers); whimsy comes from motion only ---------- */
+:root{--car-go:var(--zk-accent);--car-stuck:#d99a00;--car-done:var(--zk-ok-fg);--hazard:#f5a300}
+:root[data-theme="dark"]{--car-stuck:#f2c255;--hazard:#ffc247}
+.hwwrap{overflow-x:auto;border-radius:20px;border:1px solid var(--zk-border);background:var(--zk-surface)}
+.hw{min-width:1000px;padding:16px 16px 10px;position:relative}
+.signs{display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin:0 0 4px 64px;background:var(--zk-tint);border-radius:14px}
+.sign{color:var(--zk-info-fg);text-align:center;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:11px 4px;line-height:1.25}
+.sign small{display:block;font-weight:500;letter-spacing:0;text-transform:none;color:var(--zk-muted);font-size:.72rem;margin-top:2px}
+.road{position:relative}
+.zones{position:absolute;inset:0 0 0 64px;display:grid;grid-template-columns:repeat(7,1fr);pointer-events:none}
+.zones span{border-right:1px solid var(--zk-divider)}
+.zones span:last-child{border-right:0}
+.lane{position:relative;height:62px;border-bottom:1px solid var(--zk-divider)}
+.lane:last-child{border-bottom:0}
+.lane::after{content:"";position:absolute;left:64px;right:0;top:50%;border-top:2px dashed var(--zk-border);z-index:0}
+.shoulder{position:absolute;left:0;top:0;bottom:0;width:64px;display:flex;align-items:center;font-family:var(--mono);font-size:.76rem;color:var(--zk-muted)}
+.car{position:absolute;top:50%;left:calc(64px + (100% - 64px) * var(--x));transform:translate(-50%,-50%);transition:left 1.7s cubic-bezier(.45,.05,.3,1);border:0;background:none;padding:0;cursor:pointer;z-index:2;line-height:0;border-radius:10px}
+.car:hover{background:none}
+.cv{width:70px;height:34px;overflow:visible;display:block}
+.go,.car.go{--car:var(--car-go)}.stuck,.car.stuck{--car:var(--car-stuck)}.driving,.car.driving{--car:var(--car-go)}.done,.car.done{--car:var(--car-done)}
+.cv .body{fill:var(--car)}
+.cv .glass{fill:var(--zk-tint)}
+.cv .tyre{fill:var(--zk-text)}.cv .hub{fill:var(--zk-surface)}
+.cv .plate{fill:var(--zk-surface)}.cv .plate-t{fill:var(--zk-text);font-family:var(--mono)}
+.cv .lamp{fill:var(--zk-warn-bg)}
+.cv .wheel{transform-box:fill-box;transform-origin:center}
+.car.go .wheel,.car.driving .wheel{animation:spin .55s linear infinite}
+.car.go .cv{animation:cruise 2.6s ease-in-out infinite}
+.car.driving .cv{animation:bob .25s ease-in-out infinite alternate}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes cruise{50%{transform:translateX(3px)}}
+@keyframes bob{to{transform:translateY(-1.5px)}}
+.cv .hz{fill:var(--hazard);opacity:0}
+.car.stuck .hz{animation:blink .9s steps(1) infinite}
+@keyframes blink{50%{opacity:1}}
+.car.sel{outline:2px solid var(--zk-accent);outline-offset:5px}
+.car:focus-visible{outline:2px solid var(--zk-accent);outline-offset:5px}
+.car.puff::after{content:"";position:absolute;left:-14px;top:50%;width:12px;height:12px;border-radius:50%;background:var(--zk-border);animation:puff .8s ease-out forwards}
+@keyframes puff{from{opacity:1;transform:translate(0,-50%) scale(.6)}to{opacity:0;transform:translate(-22px,-50%) scale(1.8)}}
+.flag{position:absolute;top:-8px;right:-4px;font-size:.62rem;font-weight:800;color:var(--zk-ok-fg);background:var(--zk-ok-bg);border-radius:999px;padding:1px 6px;line-height:1.4}
+.bubble{position:absolute;top:50%;left:calc(64px + (100% - 64px) * var(--x) + 42px);transform:translateY(-50%);background:var(--zk-surface);color:var(--zk-text2);border:1px solid var(--zk-border);border-radius:12px;padding:5px 10px;font-size:.74rem;line-height:1.35;max-width:236px;z-index:3;pointer-events:none;transition:left 1.7s cubic-bezier(.45,.05,.3,1)}
+.bubble.warn{background:var(--zk-warn-bg);border-color:var(--zk-warn-bd);color:var(--zk-text)}
+.bubble.okb{background:var(--zk-ok-bg);border-color:transparent;color:var(--zk-ok-fg)}
+.bubble.flip{left:calc(64px + (100% - 64px) * var(--x) - 42px);transform:translate(-100%,-50%)}
+.bubble b{display:block;font-size:.72rem;color:var(--zk-text)}
+.bubble.warn b{color:var(--zk-warn-fg)}
+.bubble[hidden]{display:none}
+.hwsub{margin:4px 0 0;color:var(--zk-muted);font-variant-numeric:tabular-nums}
+.hwsub b{color:var(--zk-text);font-weight:700}
+.hwhint{font-size:.82rem;color:var(--zk-muted);margin:0}
+@media (min-width:1080px){.hwhint{display:none}}
+.hwcard{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center}
+@media (max-width:700px){.hwcard{grid-template-columns:1fr}}
+.hwcard .cv{width:84px;height:41px}
+.hwcard .answer{font-size:1.08rem}
+.hwcard .btns{display:flex;flex-direction:column;gap:8px}
+@media (max-width:700px){.hwcard .btns{flex-direction:row;flex-wrap:wrap}}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--zk-muted)}
+.legend span{display:flex;gap:7px;align-items:center}
+.legend i{width:16px;height:9px;border-radius:3px;display:inline-block;background:var(--k)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head><body>
+
+<header class="top">
+  <div class="gut"><div class="inner bar">
+    <a class="logo" href="#dashboard"><svg class="zmark" viewBox="0 0 28 32" fill="none" aria-hidden="true"><path d="M5 13h16L5 27.5h16" stroke="#2e6fef" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.5 2.5 21 9h-9Z" fill="#38A3FF" stroke="#38A3FF" stroke-width="1.6" stroke-linejoin="round"/></svg>ziki</a>
+    <div class="sep"></div>
+    <div class="nav"><span>Zedu ▾</span><span>◷ Product</span><span>🔈 Marketing</span><span>⛉ Security</span></div>
+    <div class="right">
+      <span class="pillbtn hide-sm">🤖 Agents ▾</span>
+      <span class="pillbtn"><span class="mp">MP</span><span class="hide-sm">Michael Paul ▾</span></span>
+      <span class="pts">🏆 4212 pts</span>
+      <span class="bell" aria-label="Notifications">🔔<b id="bellN">3</b></span>
+    </div>
+  </div></div>
+  <div class="gut"><nav class="inner tabs" aria-label="Main">
+    <a href="#dashboard" data-v="dashboard">Dashboard</a>
+    <a href="#issues" data-v="issues">Issues</a>
+    <a href="#stuck" data-v="stuck">Stuck <span class="cnt" id="tabCnt">0</span> <span class="newtag">New</span></a>
+    <a href="#highway" data-v="highway">🚗 Highway <span class="newtag">New</span></a>
+    <a href="#about" data-v="about" class="about">About this proposal</a>
+  </nav></div>
+  <div class="ribbon gut"><div class="inner"><span>✦ Proposal mock-up: <b>Why is this stuck?</b> Every stuck issue explains itself in one sentence.</span><a href="#about">Read the proposal →</a></div></div>
+</header>
+
+<main class="gut"><div class="inner">
+
+  <!-- DASHBOARD -->
+  <section class="view page" id="v-dashboard">
+    <div class="ph"><div><h1>Welcome back, Michael</h1><p>Issues, votes and your points for Ziki at a glance.</p></div><button type="button">＋ New issue</button></div>
+    <div class="cards">
+      <div class="kpi"><h3>Points</h3><div class="n">4212</div><div class="s"><em>500</em> required this week</div></div>
+      <div class="kpi"><h3>Created by me</h3><div class="n">1</div><div class="s"><em>+1</em> in the last 30 days</div></div>
+      <div class="kpi"><h3>Assigned to me</h3><div class="n">0</div><div class="s"><em>0</em> high priority</div></div>
+      <a class="kpi hot" href="#stuck" style="color:inherit;text-decoration:none"><h3>Stuck right now <span class="newtag">New</span></h3><div class="n" id="dStuck">0</div><div class="s"><em id="dYou">0</em> waiting on you</div></a>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>Waiting on you <small>Only you can move these</small></h2>
+        <div id="dWaitYou"></div>
+      </div>
+      <div class="card">
+        <h2>Your agents <small>Live status</small></h2>
+        <ul class="alist">
+          <li><span class="av" style="--c:#146c43">CO</span><div><b>Michael's Contributor</b><span>Waiting for your answer on #1491</span></div><span class="dot d-wait">Waiting on you</span></li>
+          <li><span class="av" style="--c:#1d4fb8">RV</span><div><b>Michael's Reviewer</b><span>Working on #1511 Leaderboard doesn't load on Safari</span></div><span class="dot d-work">Working</span></li>
+          <li><span class="av" style="--c:#b07a00">TR</span><div><b>Michael's Triager</b><span>Standing by</span></div><span class="dot d-idle">Idle</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ISSUES -->
+  <section class="view page" id="v-issues" hidden>
+    <div class="ph"><div><h1>Issues</h1><p>Zedu · sorted by top votes</p></div>
+      <div class="seg" role="group" aria-label="Filter"><button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="stuck" aria-pressed="false">Stuck only</button></div></div>
+    <div class="card" style="padding-top:8px">
+      <div class="tbl"><table>
+        <thead><tr><th>Votes</th><th>Issue</th><th>Type</th><th>Priority</th><th>Status</th><th>Stage</th><th>Reported</th><th>Why stuck?</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- STUCK -->
+  <section class="view page" id="v-stuck" hidden>
+    <div class="ph"><div><h1>Stuck issues</h1><p>Every issue with no progress, grouped by who it's waiting on.</p></div><button type="button" id="listenStuck">🔊 Read them to me</button></div>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <!-- HIGHWAY -->
+  <section class="view page" id="v-highway" hidden>
+    <div class="ph"><div><h1>Issue Highway</h1><p class="hwsub" aria-live="polite"><b id="hOn">0</b> on the road · <b id="hStuck">0</b> pulled over · <b id="hDone">0</b> merged</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="traffic">🔊 Traffic report</button><button type="button" id="bubbleBtn" aria-pressed="true">Hide notes</button></div></div>
+    <p class="hwhint">Scroll sideways to see the whole road.</p>
+    <div class="hwwrap"><div class="hw" id="hw"></div></div>
+    <div class="legend"><span><i style="--k:var(--car-go)"></i>Moving</span><span><i style="--k:var(--car-stuck)"></i>Stuck, hazards on</span><span><i style="--k:var(--car-done)"></i>Merged</span></div>
+    <div class="card" id="hwcard" aria-live="polite"></div>
+  </section>
+
+  <!-- ISSUE DETAIL -->
+  <section class="view page" id="v-issue" hidden></section>
+
+  <!-- ABOUT -->
+  <section class="view page" id="v-about" hidden>
+    <div class="about">
+      <article class="prose">
+        <section>
+          <span class="whytag" style="color:var(--zk-info-fg);background:var(--zk-info-bg);align-self:flex-start">Proposal · human + agent interaction</span>
+          <h1>Why is this stuck?</h1>
+          <p class="lede">Ziki already knows why every issue isn't moving. It just doesn't say so. This proposal puts that knowledge into one plain sentence on every stuck issue, names who it's waiting on, and offers the one action that gets it moving.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary" type="button" id="listen">🔊 Listen to the pitch</button><a href="#issue-1488"><button type="button">See an example →</button></a></div>
+        </section>
+        <section>
+          <h2>The problem</h2>
+          <p>Work in Ziki passes between people and agents many times: votes, confirmations, offers, bids, claims, deliveries, verdicts, approvals and merges. When an issue stops, the reason is spread across the stage chip, the review status, the conversation, the agent's claim and the project's workflow settings. A person has to piece it together. An agent waiting on a person often just goes quiet.</p>
+          <p>So people ask in chat, "what's happening with #1488?", and nobody is sure whose move it is.</p>
+        </section>
+        <section>
+          <h2>The idea</h2>
+          <ol>
+            <li><b>A "Why stuck?" chip</b> on any issue with no progress for longer than its workflow expects.</li>
+            <li><b>One sentence that explains it</b>, built from data Ziki already stores. It says what's missing, who it's waiting on, and for how long.</li>
+            <li><b>One action to unstick it</b>, like nudge the Reviewers, award the bid, answer the agent, or ask an admin to approve.</li>
+            <li><b>A Stuck tab</b> that groups every stuck issue by who it's waiting on: you, your agents, or your team.</li>
+          </ol>
+        </section>
+        <section>
+          <h2>It reads rules Ziki already has</h2>
+          <p>No new workflow. Each reason comes from an existing setting or record:</p>
+          <div class="rtable"><table>
+            <thead><tr><th>Ziki rule</th><th>Default</th><th>What the sentence says</th></tr></thead>
+            <tbody>
+              <tr><td>Work readiness votes</td><td>3 upvotes</td><td>"Has 2 of 3 upvotes, so work can't be assigned yet."</td></tr>
+              <tr><td><code>confirmationsNeeded</code></td><td>2</td><td>"1 of 2 confirmations. Waiting on Reviewers."</td></tr>
+              <tr><td><code>offerWindowSeconds</code> + <code>maxActiveClaims</code></td><td>60s, 2</td><td>"Every offer ran out. All Contributors hold 2 claims."</td></tr>
+              <tr><td>Bids awaiting award</td><td>a person</td><td>"2 bids are waiting for a person to award one."</td></tr>
+              <tr><td>Agent questions</td><td>an owner</td><td>"Waiting for your answer. The agent paused."</td></tr>
+              <tr><td><code>verdictsNeeded</code></td><td>2</td><td>"1 of 2 merge verdicts. Waiting on Reviewers."</td></tr>
+              <tr><td>Review status: Needs Revision</td><td>evidence</td><td>"Rejected: no screenshots or test results."</td></tr>
+              <tr><td>Approval rules</td><td>per project</td><td>"Ready to Merge, but an approval rule needs an admin."</td></tr>
+            </tbody>
+          </table></div>
+        </section>
+        <section>
+          <h2>Agents can ask too</h2>
+          <p>The same answer is available to agents, so an agent that hits a wall can find out why and who to ask, instead of guessing or going quiet:</p>
+          <ul><li><code>GET /api/v1/issues/{id}/blockers</code> returns the reason, who it's waiting on, since when, and the suggested action.</li><li>An MCP tool, <code>ziki_why_stuck</code>, next to <code>ziki_find_reviewable_issues</code> and the others.</li><li>A <code>blocker.changed</code> event on <code>/api/v1/events/stream</code>, so the right agent wakes up when it's its turn.</li></ul>
+        </section>
+        <section>
+          <h2>The Issue Highway</h2>
+          <p>A playful view of the same information. Every issue is a car driving from Reported to Merged, past a sign for each real Ziki stage: the on-ramp, the checkpoint, the bid garage, the workshop, inspection, the toll gate and the finish line. A stuck issue pulls over with its hazard lights blinking and a speech bubble saying why. Tap it, fix it, and it honks and drives on to the finish.</p>
+          <p>It's a fun way to show a whole project at a glance: where the traffic jams are, and whose turn it is to clear them. <a href="#highway">Open the Highway →</a></p>
+        </section>
+        <section>
+          <h2>How it's different</h2>
+          <p><b>Standing orders</b> decides what agents may do ahead of time. <b>Ready for your call</b> turns agent verdicts into one decision for a person. <b>Why is this stuck?</b> covers the gaps between them: any issue, at any stage, waiting on anyone, a person or an agent. It explains and routes. It doesn't add new permissions.</p>
+        </section>
+        <section>
+          <h2>How we'd ship it</h2>
+          <ol><li>Read-only "Why stuck?" chip and sentence on the issue page.</li><li>The Stuck tab and the "Stuck right now" dashboard card.</li><li>One-tap actions, using routes Ziki already has.</li><li>The agent API, the MCP tool and the event.</li></ol>
+        </section>
+      </article>
+      <aside class="side">
+        <div class="card"><p class="lbl">Try it</p><ul><li><a href="#stuck">Open the Stuck tab</a></li><li><a href="#highway">🚗 Drive the Issue Highway</a></li><li><a href="#issue-1491">An agent waiting for your answer</a></li><li><a href="#issue-1495">Bids waiting to be awarded</a></li><li><a href="#issue-1497">Held by an approval rule</a></li></ul></div>
+        <div class="card"><p class="lbl">What it adds</p><ul><li>1 chip, 1 panel, 1 tab, 1 dashboard card</li><li>1 API route, 1 MCP tool, 1 event</li><li>0 new permissions</li></ul></div>
+        <div class="card"><p class="lbl">Mock-up</p><p style="margin:0;font-size:.88rem;color:var(--zk-muted)">Sample Zedu issues. Not connected to Ziki. Labels, chips and rules follow the Ziki codebase.</p></div>
+      </aside>
+    </div>
+  </section>
+
+  <p class="foot" style="padding-bottom:28px">Ziki proposal mock-up · Why is this stuck? · Sample data</p>
+</div></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const AG={
+  you:{n:"You",c:"#0f8a55",a:"MP"},
+  rev:{n:"Reviewers",c:"#1d4fb8",a:"RV"},
+  con:{n:"Michael's Contributor",c:"#146c43",a:"CO"},
+  conx:{n:"Contributors",c:"#146c43",a:"CO"},
+  mer:{n:"Merger",c:"#c2405f",a:"ME"},
+  adm:{n:"An admin",c:"#7C3AED",a:"AD"},
+  voters:{n:"Your team",c:"#5f6577",a:"TM"}
+};
+const wo=w=>({"You":"you","An admin":"an admin","Your team":"your team"}[w.n]||w.n);
+const TRACK=["Reported","Confirmed","Ready","In progress","In Review","Ready to Merge","Merged"];
+const ISSUES=[
+ {n:1497,t:"Password reset link never expires",type:"Fix",pri:"critical",status:"in_progress",stage:null,review:"ready",votes:31,rep:"3 days ago",pos:5,
+  stuck:{who:"adm",grp:"team",since:"3 hours",ans:`The fix is <mark>Ready to Merge</mark>, but an approval rule says Security fixes need a person to approve at the merge stage. <mark>The approval is still pending.</mark>`,
+   short:"Ready to Merge, held by an approval rule for Security fixes.",
+   rule:`Approval rule · stage <code>merge</code> · area Security`,act:"Ask an admin to approve",alt:"View the pull request",done:"Request sent to the Zedu admins. Ziki will merge it as soon as one approves.",
+   q:{"When will it be live?":"Minutes after an admin approves. Auto-merge is on for this project.","Who's working on it?":"No one needs to. All agents are done, and it's only waiting for an approval.","Can I speed it up?":"Ask an admin. Security fixes always need a person, by design."}},
+  convo:[["con","delivery","Submitted PR #1497. Reset links now expire after 30 minutes. Tests attached."],["rev","review","Test verdict: good to merge."],["rev","review","Test verdict: good to merge. 2 of 2."],["mer","merge","Accepted. Ready to Merge."]]},
+ {n:1488,t:"Chat panel doesn't scroll to the newest message",type:"Fix",pri:"high",status:"in_progress",stage:null,review:"review",votes:24,rep:"2 days ago",pos:4,
+  stuck:{who:"rev",grp:"agents",since:"5 hours",ans:`Waiting on <mark>1 more merge verdict</mark>. The fix needs 2 good-to-merge verdicts and has 1. No free Reviewer has picked it up in 5 hours.`,
+   short:"1 of 2 merge verdicts. No free Reviewer has picked it up.",
+   rule:`Workflow · <code>verdictsNeeded: 2</code>`,act:"Nudge Reviewers",alt:"View the pull request",done:"Reviewers nudged. A Reviewer picked it up a minute later.",
+   q:{"When will it be live?":"Shortly after the second verdict. Auto-merge is on, so no one has to merge it by hand.","Who's working on it?":"Nobody right now. The first Reviewer finished, and the second slot is empty.","Can I speed it up?":"Nudge the Reviewers, or upvote it so it rises in their queue."}},
+  convo:[["con","bid","I'll take this. The scroll runs before the message renders."],["con","delivery","Submitted PR #1488 with a test for 5 messages in a row."],["rev","review","Test verdict: good to merge. 1 of 2."]]},
+ {n:1491,t:"Signup button says “Go” on mobile",type:"Marketing",pri:"medium",status:"in_progress",stage:null,review:null,votes:19,rep:"4 days ago",pos:3,
+  stuck:{who:"you",grp:"you",since:"1 day",ans:`Waiting for <mark>your answer</mark>. Michael's Contributor asked a question 1 day ago and paused the work until you reply.`,
+   short:"Your Contributor asked a question and paused.",
+   rule:`Agent status · <code>Waiting on you</code>`,act:"Answer: change both",alt:"Answer: mobile only",done:"Answer sent. Your Contributor started working again.",
+   question:"Should the desktop button change to “Start free” too, so both match?",
+   q:{"When will it be live?":"About a day after you answer. The fix is small.","Who's working on it?":"Michael's Contributor, paused until you answer.","Can I speed it up?":"Yes. Answer the question. That's the only thing holding it."}},
+  convo:[["con","bid","Claimed. I'll change “Go” to “Start free”."],["con","comment","Question: should the desktop button change too, so both match?"]]},
+ {n:1495,t:"Avatars clip through the chair in Zedu Office",type:"Design",pri:"medium",status:"open",stage:"ready",review:null,votes:15,rep:"2 days ago",pos:2,
+  stuck:{who:"you",grp:"you",since:"6 hours",ans:`It's Ready for work, but nobody has it. <mark>2 agents bid on it 6 hours ago</mark>, and the bids are waiting for a person to award one.`,
+   short:"2 bids waiting for a person to award one.",
+   rule:`Assignment · an agent has to be offered the issue, or have its bid awarded`,act:"Award to Ada's Contributor",alt:"Compare the 2 bids",done:"Bid awarded. Ada's Contributor claimed it.",
+   q:{"When will it be live?":"Design fixes like this usually take about a day once claimed.","Who's working on it?":"No one yet. 2 Contributors are waiting for you to pick.","Can I speed it up?":"Award one of the bids. Ada's plan is smaller and easier to undo."}},
+  convo:[["rev","validation","Confirmed. 2 of 2."],["conx","bid","Ada's Contributor: move the camera back on small screens. 1 line."],["conx","bid","Bola's Contributor: scale the chair models down 8%."]]},
+ {n:1509,t:"Search ignores issue numbers",type:"Fix",pri:"low",status:"open",stage:"ready",review:null,votes:9,rep:"1 day ago",pos:2,
+  stuck:{who:"conx",grp:"agents",since:"4 hours",ans:`Offered to 3 agents and <mark>every offer ran out</mark>. Offers last 60 seconds, and every Contributor already holds 2 active claims, the limit.`,
+   short:"Every offer expired. All Contributors are at 2 claims.",
+   rule:`Workflow · <code>offerWindowSeconds: 60</code> · <code>maxActiveClaims: 2</code>`,act:"Open it to bids",alt:"Assign it to a person",done:"Opened to bids. A Contributor will bid when one of its claims finishes.",
+   q:{"When will it be live?":"No estimate until someone claims it.","Who's working on it?":"Nobody. All Contributors are busy with 2 claims each.","Can I speed it up?":"Open it to bids so it's picked up the moment a Contributor is free."}},
+  convo:[["rev","validation","Confirmed. 2 of 2."],["conx","comment","Offer to Ada's Contributor expired."],["conx","comment","Offer to Bola's Contributor expired."]]},
+ {n:1502,t:"Typo on the pricing page",type:"Marketing",pri:"low",status:"in_progress",stage:null,review:"revision",votes:6,rep:"3 days ago",pos:4,
+  stuck:{who:"con",grp:"agents",since:"9 hours",ans:`<mark>Needs Revision</mark>. The Merger rejected the fix because it has no screenshots or test results, and the Contributor hasn't resubmitted.`,
+   short:"Needs Revision: no screenshots or test results.",
+   rule:`Delivery evidence · <code>screenshots</code> or <code>testResults</code> required`,act:"Ask for a screenshot",alt:"Attach one myself",done:"Request sent. The Contributor added a screenshot and resubmitted.",
+   q:{"When will it be live?":"Same day once the screenshot is added. It's a one-word fix.","Who's working on it?":"Michael's Contributor, but it may not have seen the Merger's note.","Can I speed it up?":"Ask for the screenshot, or attach one yourself."}},
+  convo:[["con","delivery","Fixed “anual” → “annual”."],["mer","merge","Rejected: no screenshots or test results."]]},
+ {n:1504,t:"Notification badge shows the wrong count",type:"Fix",pri:"medium",status:"open",stage:"reported",review:null,votes:2,rep:"2 days ago",pos:0,
+  stuck:{who:"voters",grp:"team",since:"2 days",ans:`Still an idea. It has <mark>1 of 2 confirmations</mark> and <mark>2 of 3 upvotes</mark>, so work can't be assigned yet.`,
+   short:"1 of 2 confirmations and 2 of 3 upvotes.",
+   rule:`Workflow · <code>confirmationsNeeded: 2</code> · 3 upvotes for work readiness`,act:"Upvote it",alt:"Nudge Reviewers to confirm",done:"Upvoted. 3 of 3. A Reviewer was nudged for the second confirmation.",
+   q:{"When will it be live?":"No estimate until it's confirmed and has 3 upvotes.","Who's working on it?":"Nobody can yet. Contributors can't see it until it's Ready.","Can I speed it up?":"Upvote it. It only needs one more vote and one more confirmation."}},
+  convo:[["you","report","The bell shows 9 but I have 3 notifications."],["rev","validation","Accept: real. 1 of 2."]]},
+ {n:1506,t:"Add dark mode to the dashboard",type:"Feat",pri:"medium",status:"in_progress",stage:null,review:null,votes:28,rep:"5 days ago",pos:3,ok:"Contributor heartbeat 3 min ago",
+  convo:[["con","bid","Claimed. Working on the dashboard colors."]]},
+ {n:1511,t:"Leaderboard doesn't load on Safari",type:"Fix",pri:"high",status:"in_progress",stage:null,review:"review",votes:12,rep:"1 day ago",pos:4,ok:"Reviewer testing now",
+  convo:[["con","delivery","Submitted PR #1511."],["rev","review","Testing on Safari 18."]]},
+ {n:1480,t:"Points chart shows the wrong week",type:"Fix",pri:"medium",status:"resolved",stage:null,review:"merged",votes:17,rep:"6 days ago",pos:6,ok:"Merged",
+  convo:[["mer","merge","Accepted. Ready to Merge."],["adm","merge","Merged. Points awarded."]]}
+];
+const PRI={low:"Low",medium:"Medium",high:"High",critical:"Critical"};
+const STATUS={open:"Open",in_progress:"In progress",resolved:"Resolved"};
+const STAGE={reported:"Reported",confirmed:"Confirmed",ready:"Ready"};
+const REVIEW={review:["In Review","r-review"],ready:["Ready to Merge","r-ready"],revision:["Needs Revision","r-revision"],merged:["Merged","r-merged"]};
+const GROUPS=[["you","Waiting on you","var(--zk-warn-fg)"],["agents","Waiting on agents","var(--zk-accent)"],["team","Waiting on your team","var(--zk-muted)"]];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const strip=s=>s.replace(/<[^>]+>/g,"");
+let filter="all";
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),2400)}
+const isStuck=i=>i.stuck&&!i.fixed;
+const byN=n=>ISSUES.find(i=>i.n===n);
+function stageChip(i){
+  if(i.review)return `<span class="chip ${REVIEW[i.review][1]}">${REVIEW[i.review][0]}</span>`;
+  if(i.stage)return `<span class="chip st-${i.stage}">${STAGE[i.stage]}</span>`;
+  return `<span class="chip s-in_progress">Claimed</span>`;
+}
+function statusCell(i){
+  if(i.fixed)return `<span class="moving">↻ Moving again</span>`;
+  if(isStuck(i))return `<button class="stuckbtn" type="button" data-go="${i.n}">⏳ ${i.stuck.since}</button>`;
+  return `<span class="fine">● ${esc(i.ok)}</span>`;
+}
+function counts(){const s=ISSUES.filter(isStuck);const you=s.filter(i=>i.stuck.grp==="you").length;
+  $("tabCnt").textContent=s.length;$("dStuck").textContent=s.length;$("dYou").textContent=you;$("bellN").textContent=you||"";}
+function drawRows(){
+  const list=ISSUES.filter(i=>filter==="all"||isStuck(i)).sort((a,b)=>b.votes-a.votes);
+  $("rows").innerHTML=list.map(i=>`<tr data-go="${i.n}"><td class="votes">${i.votes}</td>
+    <td class="ititle"><b>${esc(i.t)}</b><span class="num">#${i.n}</span></td>
+    <td><span class="chip t">${i.type}</span></td><td><span class="chip c-${i.pri}">${PRI[i.pri]}</span></td>
+    <td><span class="chip s-${i.status}">${STATUS[i.status]}</span></td><td>${stageChip(i)}</td>
+    <td style="color:var(--zk-muted);white-space:nowrap">${i.rep}</td><td>${statusCell(i)}</td></tr>`).join("")||`<tr><td colspan="8" class="empty">Nothing is stuck. 🎉</td></tr>`;
+}
+function scard(i){const s=i.stuck,w=AG[s.who];const g=GROUPS.find(x=>x[0]===s.grp);
+  return `<div class="scard ${i.fixed?"done":""}" style="--g:${g[2]}"><div class="row"><span class="num">#${i.n}</span><span class="chip c-${i.pri}">${PRI[i.pri]}</span>${stageChip(i)}<span class="since">${i.fixed?"↻ Moving again":"⏳ "+s.since}</span></div>
+    <h4>${esc(i.t)}</h4><p>${esc(s.short)}</p>
+    <div class="row" style="font-size:.82rem;color:var(--zk-muted)"><span class="av" style="--c:${w.c};width:24px;height:24px;font-size:.6rem">${w.a}</span>Waiting on ${wo(w)}</div>
+    <div class="acts">${i.fixed?"":`<button class="sm" type="button" data-act="${i.n}" style="color:var(--zk-accent);border-color:var(--zk-accent)">${esc(s.act)}</button>`}<a href="#issue-${i.n}"><button class="sm" type="button">Why? →</button></a></div></div>`}
+function drawStuck(){
+  $("groups").innerHTML=GROUPS.map(([k,l,c])=>{const list=ISSUES.filter(i=>i.stuck&&i.stuck.grp===k);
+    const open=list.filter(i=>!i.fixed).length;
+    return `<div class="group"><h3><span style="width:10px;height:10px;border-radius:50%;background:${c}"></span>${l}<span class="cnt">${open}</span></h3>
+      <div class="glist">${list.map(scard).join("")||'<div class="empty">Nothing here.</div>'}</div></div>`}).join("");
+}
+function drawDash(){
+  const list=ISSUES.filter(i=>i.stuck&&i.stuck.grp==="you");
+  $("dWaitYou").innerHTML=`<ul class="alist">${list.map(i=>`<li><span class="av" style="--c:var(--zk-warn-fg)">⏳</span><div><b>#${i.n} ${esc(i.t)}</b><span>${esc(i.stuck.short)}</span></div>${i.fixed?'<span class="moving">↻ Moving</span>':`<a href="#issue-${i.n}"><button class="sm" type="button">Why?</button></a>`}</li>`).join("")}</ul>`;
+}
+function drawIssue(n){
+  const i=byN(n);if(!i){location.hash="issues";return}
+  const s=i.stuck;
+  const track=`<div class="track">${TRACK.map((_,k)=>`<i class="${k<i.pos?"done":k===i.pos?(isStuck(i)?"stuck":"done"):""}"></i>`).join("")}</div><div class="tracklbl"><span>Reported</span><span>Now: ${TRACK[i.pos]}</span><span>Merged</span></div>`;
+  let why;
+  if(!s){why=`<section class="why ok"><div class="l"><span class="whytag" style="color:var(--zk-ok-fg);background:var(--zk-ok-bg);align-self:flex-start">Not stuck</span><p class="answer">This issue is moving. ${esc(i.ok)}.</p>${track}</div><div class="r"><p class="rule">The "Why stuck?" panel only shows when an issue has had no progress for longer than its workflow expects.</p></div></section>`}
+  else{const w=AG[s.who];
+    why=`<section class="why" aria-live="polite"><div class="l">
+      <div class="top"><span class="whytag">⏳ Why is this stuck?</span><button class="sm" type="button" id="readit">🔊 Read</button></div>
+      <p class="answer">${s.ans}</p>
+      <div class="waiting"><span class="av" style="--c:${w.c}">${w.a}</span><div><b>Waiting on ${wo(w)}</b><span>${s.grp==="you"?"Only you can move this":s.grp==="agents"?"An agent needs a nudge":"A person on your team needs to act"}</span></div><span class="since">${i.fixed?"↻ Moving":s.since}</span></div>
+      ${track}
+      <p class="rule">Based on: ${s.rule}</p>
+    </div><div class="r">
+      <div id="fixbox">${i.fixed?`<div class="donebox">✓ ${esc(s.done)}</div>`:`<div class="fix"><p class="lbl" style="color:var(--zk-info-fg)">What would unstick it</p>${s.question?`<p><b>The question:</b> ${esc(s.question)}</p>`:""}<div class="btns"><button class="primary" type="button" id="act">${esc(s.act)}</button><button type="button" id="alt">${esc(s.alt)}</button></div></div>`}</div>
+      <p class="lbl">Ask a follow-up</p>
+      <div class="ask">${Object.keys(s.q).map(q=>`<button type="button">${esc(q)}</button>`).join("")}</div>
+      <div id="replies" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div></section>`}
+  $("v-issue").innerHTML=`<div class="crumb" style="font-size:.86rem;color:var(--zk-muted)"><a href="#issues">Issues</a> / <span class="num">#${i.n}</span></div>
+    <div class="ihead"><h1>${esc(i.t)}</h1><div class="row"><span class="chip t">${i.type}</span><span class="chip c-${i.pri}">${PRI[i.pri]}</span><span class="chip s-${i.status}">${STATUS[i.status]}</span>${stageChip(i)}<span style="color:var(--zk-muted);font-size:.85rem">· ${i.votes} votes · reported ${i.rep}</span></div></div>
+    ${why}
+    <div class="card"><h2>Conversation <small>${i.convo.length} entries</small></h2><ul class="convo">${i.convo.map(([r,ty,tx])=>{const a=AG[r];return `<li><span class="av" style="--c:${a.c}">${a.a}</span><div class="bub"><div class="meta"><b>${a.n}</b><span class="ctype">${ty}</span></div>${esc(tx)}</div></li>`}).join("")}</ul></div>`;
+  if(s){
+    $("readit").onclick=()=>say(`Issue ${i.n}. ${i.t}. ${strip(s.ans)} ${i.fixed?s.done:"To unstick it: "+s.act+"."}`);
+    const fx=()=>unstick(i);
+    if($("act"))$("act").onclick=fx;if($("alt"))$("alt").onclick=fx;
+    document.querySelectorAll("#v-issue .ask button").forEach(b=>b.onclick=()=>{const r=document.createElement("p");r.className="reply";r.innerHTML=`<b>${esc(b.textContent)}</b><br>${esc(s.q[b.textContent])}`;$("replies").prepend(r)});
+  }
+}
+/* ---------- Issue Highway ---------- */
+const STOPS=[["Reported","On-ramp"],["Confirmed","Checkpoint"],["Ready","Bid garage"],["In progress","Workshop"],["In Review","Inspection"],["Ready to Merge","Toll gate"],["Merged","Finish line"]];
+let hwSel=null,bubbles=true,hwBuilt=false;
+const xOf=i=>(i.pos+.5)/7;
+function hwState(i){return i.pos>=6?"done":isStuck(i)?"stuck":i.fixed?"driving":"go"}
+function carSVG(i){return `<svg class="cv" viewBox="0 0 70 34" aria-hidden="true">
+   <path class="body" d="M4 26 V18 Q5 14 12 13 L21 6 Q24 4 29 4 L44 4 Q49 4 52 9 L56 13 Q64 14 66 19 V26 Z"/>
+   <path class="glass" d="M23 8 L30 7 L30 13 L18 13 Z"/><path class="glass" d="M33 7 L43 7 Q46 7 49 12 L33 13 Z"/>
+   <rect class="plate" x="12" y="16" width="28" height="8" rx="2"/>
+   <text class="plate-t" x="26" y="22.3" text-anchor="middle" font-size="6.4" font-weight="700">#${i.n}</text>
+   <rect class="lamp" x="62" y="18" width="4" height="3" rx="1"/>
+   <rect class="hz" x="1" y="18" width="4.5" height="4.5" rx="1.4"/><rect class="hz" x="64" y="18" width="4.5" height="4.5" rx="1.4"/>
+   <g class="wheel"><circle class="tyre" cx="17" cy="27" r="5.6"/><circle class="hub" cx="17" cy="27" r="2.2"/><rect class="hub" x="16.5" y="22" width="1" height="10"/></g>
+   <g class="wheel"><circle class="tyre" cx="52" cy="27" r="5.6"/><circle class="hub" cx="52" cy="27" r="2.2"/><rect class="hub" x="51.5" y="22" width="1" height="10"/></g>
+  </svg>`}
+function bubbleText(i){const st=hwState(i);
+  if(st==="stuck"){const s=i.stuck,w=AG[s.who];return `<b>${s.since} · Waiting on ${esc(wo(w))}</b>${esc(s.short)}`}
+  if(st==="driving")return `<b>Moving again</b>Heading for ${STOPS[Math.min(i.pos+1,6)][0]}`;
+  if(st==="done")return `<b>Merged</b>Reached the finish line`;
+  return `<b>On track</b>${esc(i.ok||"Moving")}`}
+function hwStats(){const on=ISSUES.filter(i=>i.pos<6).length;$("hOn").textContent=on;$("hStuck").textContent=ISSUES.filter(isStuck).length;$("hDone").textContent=ISSUES.filter(i=>i.pos>=6).length}
+function buildHighway(){
+  const list=[...ISSUES].sort((a,b)=>b.votes-a.votes);
+  $("hw").innerHTML=`<div class="signs">${STOPS.map(([a,b])=>`<div class="sign">${a}<small>${b}</small></div>`).join("")}</div>
+   <div class="road"><div class="zones">${STOPS.map(()=>"<span></span>").join("")}</div>
+   ${list.map(i=>`<div class="lane"><span class="shoulder">#${i.n}</span>
+     <button class="car" type="button" id="car-${i.n}" data-car="${i.n}" aria-label="#${i.n} ${esc(i.t)}">${carSVG(i)}</button>
+     <div class="bubble" id="bub-${i.n}"></div></div>`).join("")}</div>`;
+  hwBuilt=true;hwRefresh();
+}
+function hwRefresh(){
+  if(!hwBuilt)return;
+  ISSUES.forEach(i=>{const car=$("car-"+i.n),bub=$("bub-"+i.n);if(!car)return;const st=hwState(i);
+    car.style.setProperty("--x",xOf(i));bub.style.setProperty("--x",xOf(i));
+    car.className=`car ${st}${hwSel===i.n?" sel":""}`;
+    car.querySelector(".flag")?.remove();if(st==="done")car.insertAdjacentHTML("beforeend",'<span class="flag">Merged</span>');
+    bub.innerHTML=bubbleText(i);bub.classList.toggle("flip",i.pos>=4);bub.classList.toggle("warn",st==="stuck");bub.classList.toggle("okb",st==="driving"||st==="done");
+    bub.hidden=!bubbles||(st==="go"&&hwSel!==i.n)||(st==="done"&&hwSel!==i.n)});
+  hwStats();hwCard();
+}
+function hwCard(){
+  const c=$("hwcard");const i=hwSel&&byN(hwSel);
+  if(!i){const st=ISSUES.filter(isStuck);c.innerHTML=`<p style="margin:0;color:var(--zk-muted)">${st.length?`Tap a car with blinking hazards to see why it stopped. ${st.length} ${st.length===1?"car is":"cars are"} pulled over.`:"No traffic jams. Every issue is moving."}</p>`;return}
+  const st=hwState(i);let body,btns="";
+  if(st==="stuck"){const s=i.stuck,w=AG[s.who];
+    body=`<p class="lbl">Pulled over at ${STOPS[i.pos][1]} · ${STOPS[i.pos][0]}</p><p class="answer" style="margin:6px 0">${s.ans}</p><p class="rule">Waiting on <b>${esc(wo(w))}</b> for ${s.since} · Based on: ${s.rule}</p>`;
+    btns=`<button class="primary" type="button" id="hwAct">${esc(s.act)}</button><a href="#issue-${i.n}"><button type="button" style="width:100%">Open the issue →</button></a>`}
+  else if(st==="driving"){body=`<p class="lbl">Back on the road</p><p class="answer" style="margin:6px 0">${esc(i.stuck.done)}</p><p class="rule">Now heading for ${STOPS[Math.min(i.pos+1,6)][0]}.</p>`;btns=`<a href="#issue-${i.n}"><button type="button">Open the issue →</button></a>`}
+  else if(st==="done"){body=`<p class="lbl">Finish line</p><p class="answer" style="margin:6px 0">#${i.n} is merged.</p>`;btns=`<a href="#issue-${i.n}"><button type="button">Open the issue →</button></a>`}
+  else{body=`<p class="lbl">Cruising · ${STOPS[i.pos][0]}</p><p class="answer" style="margin:6px 0">Not stuck. ${esc(i.ok)}.</p>`;btns=`<a href="#issue-${i.n}"><button type="button">Open the issue →</button></a>`}
+  c.innerHTML=`<div class="hwcard"><div class="pic ${st}">${carSVG(i)}</div><div style="min-width:0"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="num">#${i.n}</span><b>${esc(i.t)}</b><span class="chip c-${i.pri}">${PRI[i.pri]}</span></div>${body}</div><div class="btns">${btns}</div></div>`;
+  if($("hwAct"))$("hwAct").onclick=()=>unstick(i);
+}
+let actx;function honk(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume();
+  [0,.18].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.type="square";o.frequency.value=420;g.gain.setValueAtTime(0,actx.currentTime+t);g.gain.linearRampToValueAtTime(.05,actx.currentTime+t+.01);g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+t+.14);o.connect(g).connect(actx.destination);o.start(actx.currentTime+t);o.stop(actx.currentTime+t+.15)})}catch(e){}}
+setInterval(()=>{let moved=false;ISSUES.forEach(i=>{if(i.fixed&&i.pos<6){i.pos++;moved=true;
+    if(i.pos>=6){i.status="resolved";i.review="merged";i.ok="Merged"}}});
+  if(moved){hwRefresh();counts()}},2400);
+
+function unstick(i){if(i.fixed)return;i.fixed=true;counts();toast(`#${i.n} is moving again`);honk();
+  const car=$("car-"+i.n);if(car){car.classList.add("puff");setTimeout(()=>car.classList.remove("puff"),900)}
+  const h=(location.hash||"").slice(1);if(h==="highway")hwRefresh();else render()}
+function render(){
+  const h=(location.hash||"#dashboard").slice(1);
+  const m=h.match(/^issue-(\d+)$/);const view=m?"issue":(["dashboard","issues","stuck","highway","about"].includes(h)?h:"dashboard");
+  if(view==="highway"){if(!hwBuilt)buildHighway();else hwRefresh()}
+  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+view);
+  document.querySelectorAll(".tabs a").forEach(a=>{const cur=a.dataset.v===view||(view==="issue"&&a.dataset.v==="issues");a.toggleAttribute("aria-current",cur);if(cur)a.setAttribute("aria-current","page")});
+  counts();
+  if(view==="dashboard")drawDash();
+  if(view==="issues")drawRows();
+  if(view==="stuck")drawStuck();
+  if(view==="issue")drawIssue(+m[1]);
+}
+document.addEventListener("click",e=>{
+  const car=e.target.closest("[data-car]");if(car){hwSel=+car.dataset.car;hwRefresh();if(matchMedia("(max-width:900px)").matches)$("hwcard").scrollIntoView({behavior:"smooth",block:"nearest"});return}
+  const act=e.target.closest("[data-act]");if(act){e.stopPropagation();unstick(byN(+act.dataset.act));return}
+  const go=e.target.closest("[data-go]");if(go){location.hash="issue-"+go.dataset.go;window.scrollTo({top:0})}
+});
+document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));drawRows()});
+addEventListener("hashchange",()=>{render();window.scrollTo({top:0})});
+
+const synth=window.speechSynthesis;let narrating=false;
+function pickVoice(){const v=synth.getVoices().filter(x=>/^en/i.test(x.lang));return v.find(x=>/natural|neural|google|samantha|daniel/i.test(x.name))||v[0]}
+function say(t,btn,label){if(!synth){toast("This browser can't read aloud. Try Chrome, Edge or Safari.");return}
+  if(narrating&&btn){synth.cancel();narrating=false;btn.textContent=label;return}
+  synth.cancel();const u=new SpeechSynthesisUtterance(t);const v=pickVoice();if(v)u.voice=v;u.rate=.98;
+  if(btn){narrating=true;btn.textContent="⏹ Stop";u.onend=u.onerror=()=>{narrating=false;btn.textContent=label}}
+  synth.speak(u)}
+const PITCH="This is Why is this stuck, a proposal for Ziki. Work in Ziki passes between people and agents many times. Votes, confirmations, offers, bids, claims, deliveries, verdicts, approvals, and merges. When an issue stops moving, the reason is spread across the stage, the review status, the conversation, and the workflow settings. People have to piece it together, and an agent waiting on a person often just goes quiet. This proposal adds a Why stuck chip to any issue that has stopped. It explains, in one plain sentence, what's missing, who it's waiting on, and for how long. For example: waiting on one more merge verdict, the fix needs two and has one. Then it offers the one action that gets it moving. Nudge the Reviewers. Award the bid. Answer the agent's question. Or ask an admin to approve. A new Stuck tab groups every stuck issue by who it's waiting on: you, your agents, or your team. It reads rules Ziki already has, so there's no new workflow and no new permissions. And agents can ask the same question through the API, so they know who to ask instead of guessing.";
+$("listen").onclick=e=>say(PITCH,e.currentTarget,"🔊 Listen to the pitch");
+$("traffic").onclick=e=>{const s=ISSUES.filter(isStuck);const on=ISSUES.filter(i=>i.pos<6).length;
+  say(`Traffic report. ${on} issues on the road. `+(s.length?`${s.length} pulled over. `+s.map(i=>`Issue ${i.n} is stopped at the ${STOPS[i.pos][1].toLowerCase()}. ${i.stuck.short}`).join(" "):"No traffic jams. Everything is moving."),e.currentTarget,"🔊 Traffic report")};
+$("bubbleBtn").onclick=e=>{bubbles=!bubbles;e.currentTarget.setAttribute("aria-pressed",String(bubbles));e.currentTarget.textContent=bubbles?"Hide notes":"Show notes";hwRefresh()};
+$("listenStuck").onclick=e=>{const s=ISSUES.filter(isStuck);say(s.length?`You have ${s.length} stuck issues. `+s.map(i=>`Issue ${i.n}, ${i.t}. ${i.stuck.short}`).join(" "):"Nothing is stuck right now.",e.currentTarget,"🔊 Read them to me")};
+render();
+</script>
+</body></html>
