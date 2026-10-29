@@ -13,5 +13,5 @@ Reasons come from rules Ziki already has: 3 upvotes for work readiness, `confirm
 
 Sample data only. Not connected to Ziki.
 
-## Deploy on Vercel
-Import this repo at https://vercel.com/new. Framework preset: **Other**. No build command. Output directory: `.`
+## Deploy on netlify
+Import this repo at https://netlifycom/new. Framework preset: **Other**. No build command. Output directory: `.`
