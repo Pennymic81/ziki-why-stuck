@@ -1,0 +1,563 @@
+From 44b79a7656bb78eb1961d273666fefe98e94e4bb Mon Sep 17 00:00:00 2001
+From: michael <lukakcollwarm@gmail.com>
+Date: Fri, 30 Oct 2026 03:51:49 -0700
+Subject: [PATCH] feat(onboarding): add a dismissible Getting started checklist
+ for new members
+
+New members landed in a workspace with no guidance on what to do first.
+Add a Getting started card to the workspace home with four steps that
+match existing features: add a profile photo, say hello in a channel,
+send a direct message and join a Buzz call.
+
+- steps tick themselves off: the photo from the user's profile, messages
+  when sent from a channel or DM, Buzz when a call is joined
+- each open step has a button that takes you there
+- the card can be dismissed and stays dismissed, and it disappears once
+  every step is done
+- progress is saved in this browser per organisation and user (v1);
+  saving it to the account is a follow-up for zedu-be
+- node:test unit tests for the progress logic
+
+Refs zeduchat/zedu-fe#552
+---
+ .../_components/getting-started-card.tsx      | 191 ++++++++++++++++++
+ .../[org]/_components/message-box/index.tsx   |  11 +-
+ src/app/(client)/[org]/page.tsx               |  36 +++-
+ src/hooks/buzz/useBuzz.ts                     |   2 +
+ src/hooks/buzz/useChannelBuzz.ts              |   2 +
+ src/lib/onboarding/getting-started.test.mjs   |  59 ++++++
+ src/lib/onboarding/getting-started.ts         | 129 ++++++++++++
+ 7 files changed, 418 insertions(+), 12 deletions(-)
+ create mode 100644 src/app/(client)/[org]/_components/getting-started-card.tsx
+ create mode 100644 src/lib/onboarding/getting-started.test.mjs
+ create mode 100644 src/lib/onboarding/getting-started.ts
+
+diff --git a/src/app/(client)/[org]/_components/getting-started-card.tsx b/src/app/(client)/[org]/_components/getting-started-card.tsx
+new file mode 100644
+index 0000000..ee788e4
+--- /dev/null
++++ b/src/app/(client)/[org]/_components/getting-started-card.tsx
+@@ -0,0 +1,191 @@
++"use client";
++
++import Link from "next/link";
++import { useContext, useEffect, useState } from "react";
++import { Check, X } from "lucide-react";
++import { DataContext } from "~/store/GlobalState";
++import { ACTIONS } from "~/store/Actions";
++import {
++  GETTING_STARTED_CHANGED_EVENT,
++  GETTING_STARTED_STEPS,
++  type GettingStartedProgress,
++  type GettingStartedStep,
++  completedSteps,
++  dismissGettingStarted,
++  readGettingStarted,
++  shouldShowChecklist,
++} from "~/lib/onboarding/getting-started";
++
++type Props = {
++  /** Where "Say hello in a channel" goes, usually #general. */
++  channelHref?: string | null;
++};
++
++const LABELS: Record<GettingStartedStep, { title: string; hint: string }> = {
++  photo: {
++    title: "Add a profile photo",
++    hint: "Help your teammates recognise you.",
++  },
++  channel_message: {
++    title: "Say hello in a channel",
++    hint: "Post your first message so the team knows you're here.",
++  },
++  dm: {
++    title: "Send a direct message",
++    hint: "Start a one-to-one chat with a teammate.",
++  },
++  buzz: {
++    title: "Join a Buzz call",
++    hint: "Hop on a quick voice or video call with your team.",
++  },
++};
++
++export default function GettingStartedCard({ channelHref }: Props) {
++  const { state, dispatch } = useContext(DataContext);
++  const { user, orgSlug } = state;
++  const [progress, setProgress] = useState<GettingStartedProgress | null>(null);
++
++  useEffect(() => {
++    const sync = () => setProgress(readGettingStarted());
++    sync();
++    const onStorage = (event: StorageEvent) => {
++      if (event.key?.startsWith("zedu:getting-started:")) sync();
++    };
++    window.addEventListener(GETTING_STARTED_CHANGED_EVENT, sync);
++    window.addEventListener("storage", onStorage);
++    return () => {
++      window.removeEventListener(GETTING_STARTED_CHANGED_EVENT, sync);
++      window.removeEventListener("storage", onStorage);
++    };
++  }, [user?.id]);
++
++  const hasPhoto = Boolean(user?.avatar_url);
++  if (!progress || !user || !shouldShowChecklist(progress, hasPhoto)) {
++    return null;
++  }
++
++  const done = completedSteps(progress, hasPhoto);
++  const total = GETTING_STARTED_STEPS.length;
++
++  const openProfile = () => {
++    dispatch({ type: ACTIONS.PROFILE, payload: user });
++    dispatch({ type: ACTIONS.SHOW_USER_PROFILE, payload: true });
++  };
++
++  const action = (step: GettingStartedStep) => {
++    const className =
++      "shrink-0 rounded-md border border-[#D0D5DD] bg-white px-3 py-1.5 text-[13px] font-semibold text-[#344054] hover:bg-[#F9FAFB]";
++    switch (step) {
++      case "photo":
++        return (
++          <button type="button" className={className} onClick={openProfile}>
++            Add photo
++          </button>
++        );
++      case "channel_message":
++        return channelHref ? (
++          <Link href={channelHref} className={className}>
++            Open channel
++          </Link>
++        ) : null;
++      case "dm":
++        return (
++          <Link href={`/${orgSlug}/home/people/new-chat`} className={className}>
++            New message
++          </Link>
++        );
++      case "buzz":
++        return (
++          <Link href={`/${orgSlug}/buzz`} className={className}>
++            Go to Buzz
++          </Link>
++        );
++    }
++  };
++
++  return (
++    <section
++      aria-labelledby="getting-started-title"
++      className="w-full max-w-xl rounded-xl border border-[#E6EAEF] bg-white p-5 text-left shadow-sm"
++    >
++      <div className="flex items-start justify-between gap-4">
++        <div>
++          <h2
++            id="getting-started-title"
++            className="text-lg font-bold text-[#1D2939]"
++          >
++            Getting started
++          </h2>
++          <p className="mt-0.5 text-sm text-[#667085]">
++            A few quick steps to settle into your workspace.
++          </p>
++        </div>
++        <button
++          type="button"
++          onClick={dismissGettingStarted}
++          aria-label="Dismiss getting started"
++          className="rounded-md p-1 text-[#667085] hover:bg-[#F2F4F7] hover:text-[#344054]"
++        >
++          <X className="size-4" />
++        </button>
++      </div>
++
++      <div className="mt-4 flex items-center gap-3">
++        <div
++          className="h-2 flex-1 overflow-hidden rounded-full bg-[#F2F4F7]"
++          role="progressbar"
++          aria-valuemin={0}
++          aria-valuemax={total}
++          aria-valuenow={done.size}
++          aria-label="Getting started progress"
++        >
++          <div
++            className="h-full rounded-full bg-[#7141F8] transition-all"
++            style={{ width: `${(done.size / total) * 100}%` }}
++          />
++        </div>
++        <span className="shrink-0 text-xs font-semibold text-[#667085]">
++          {done.size} of {total} done
++        </span>
++      </div>
++
++      <ul className="mt-4 divide-y divide-[#F2F4F7]">
++        {GETTING_STARTED_STEPS.map((step) => {
++          const isDone = done.has(step);
++          return (
++            <li key={step} className="flex items-center gap-3 py-3">
++              <span
++                className={`flex size-6 shrink-0 items-center justify-center rounded-full border ${
++                  isDone
++                    ? "border-[#7141F8] bg-[#7141F8] text-white"
++                    : "border-[#D0D5DD] text-transparent"
++                }`}
++                aria-hidden="true"
++              >
++                <Check className="size-3.5" />
++              </span>
++              <div className="min-w-0 flex-1">
++                <p
++                  className={`text-sm font-semibold ${
++                    isDone ? "text-[#98A2B3] line-through" : "text-[#1D2939]"
++                  }`}
++                >
++                  {LABELS[step].title}
++                  <span className="sr-only">
++                    {isDone ? " (done)" : " (not done yet)"}
++                  </span>
++                </p>
++                {!isDone && (
++                  <p className="text-[13px] text-[#667085]">
++                    {LABELS[step].hint}
++                  </p>
++                )}
++              </div>
++              {!isDone && action(step)}
++            </li>
++          );
++        })}
++      </ul>
++    </section>
++  );
++}
+diff --git a/src/app/(client)/[org]/_components/message-box/index.tsx b/src/app/(client)/[org]/_components/message-box/index.tsx
+index d36c0ad..4efcfdd 100644
+--- a/src/app/(client)/[org]/_components/message-box/index.tsx
++++ b/src/app/(client)/[org]/_components/message-box/index.tsx
+@@ -58,7 +58,11 @@ import emojione from "emojione";
+ import { emoticonMap } from "./emoticon-map";
+ import { AttachmentList } from "./attachment-list";
+ import { useAttachments } from "./use-attachments";
+-import { useParams } from "next/navigation";
++import { useParams, usePathname } from "next/navigation";
++import {
++  markGettingStartedStep,
++  stepForMessagePath,
++} from "~/lib/onboarding/getting-started";
+ import { uuidv7 } from "uuidv7";
+ import { CHAT_FILE_ACCEPT } from "~/utils/document-files";
+ 
+@@ -103,6 +107,7 @@ const MessageBox = ({
+ }: any) => {
+   const { state, dispatch } = useContext(DataContext);
+   const params = useParams();
++  const pathname = usePathname();
+   const id = params.id as string;
+   const uuid = uuidv7();
+   const fileInputRef = useRef<HTMLInputElement>(null);
+@@ -241,6 +246,10 @@ const MessageBox = ({
+ 
+       sendMessage(id, uuid, content, uploaded);
+       dispatch({ type: ACTIONS.CLEAR_MENTIONS });
++      if (typingScope !== "thread") {
++        const step = stepForMessagePath(pathname);
++        if (step) markGettingStartedStep(step);
++      }
+     }
+   };
+ 
+diff --git a/src/app/(client)/[org]/page.tsx b/src/app/(client)/[org]/page.tsx
+index 433e973..02af241 100644
+--- a/src/app/(client)/[org]/page.tsx
++++ b/src/app/(client)/[org]/page.tsx
+@@ -5,6 +5,7 @@ import { HashIcon } from "lucide-react";
+ import { useRouter } from "next/navigation";
+ import ChannelNav from "~/components/layout/sidebar/Nav";
+ import { DataContext } from "~/store/GlobalState";
++import GettingStartedCard from "./_components/getting-started-card";
+ 
+ const People = () => {
+   const [sidebarWidth, setSidebarWidth] = useState(270);
+@@ -145,18 +146,31 @@ const People = () => {
+             </div>
+           </div>
+         ) : (
+-          <div className="h-[80vh] flex flex-col items-center justify-center">
+-            <Image
+-              src="/image/empty-message.svg"
+-              width={100}
+-              height={100}
+-              className="size-20 lg:size-30"
+-              alt=""
+-              unoptimized
++          <div className="min-h-[80vh] flex flex-col items-center justify-center gap-8 px-4 py-8">
++            <GettingStartedCard
++              channelHref={
++                defaultChannel && state?.orgSlug
++                  ? `/${state.orgSlug}/home/channels/${
++                      defaultChannel?.channels_id ??
++                      defaultChannel?.channel_id ??
++                      defaultChannel?.id
++                    }`
++                  : null
++              }
+             />
+-            <h2 className="font-bold text-xl text-blue-500">
+-              Select a channel
+-            </h2>
++            <div className="flex flex-col items-center">
++              <Image
++                src="/image/empty-message.svg"
++                width={100}
++                height={100}
++                className="size-20 lg:size-30"
++                alt=""
++                unoptimized
++              />
++              <h2 className="font-bold text-xl text-blue-500">
++                Select a channel
++              </h2>
++            </div>
+           </div>
+         )}
+       </div>
+diff --git a/src/hooks/buzz/useBuzz.ts b/src/hooks/buzz/useBuzz.ts
+index b34eadb..580e3c0 100644
+--- a/src/hooks/buzz/useBuzz.ts
++++ b/src/hooks/buzz/useBuzz.ts
+@@ -1,5 +1,6 @@
+ import { useCallback, useContext, useEffect, useRef, useState } from "react";
+ import { DataContext } from "~/store/GlobalState";
++import { markGettingStartedStep } from "~/lib/onboarding/getting-started";
+ import { ACTIONS } from "~/store/Actions";
+ import { useAgoraClient } from "~/hooks/buzz";
+ import { getBuzzAgoraToken, getScreenShareBuzzUid } from "~/lib/agora/token";
+@@ -571,6 +572,7 @@ export const useBuzz = (options: UseBuzzOptions = {}) => {
+         }
+ 
+         setJoined(true);
++        markGettingStartedStep("buzz");
+         setJoining(false);
+         isJoiningInProgress.current = false;
+       } catch (err) {
+diff --git a/src/hooks/buzz/useChannelBuzz.ts b/src/hooks/buzz/useChannelBuzz.ts
+index 03afe7e..736a50d 100644
+--- a/src/hooks/buzz/useChannelBuzz.ts
++++ b/src/hooks/buzz/useChannelBuzz.ts
+@@ -1,5 +1,6 @@
+ import { useCallback, useContext, useEffect, useRef, useState } from "react";
+ import { DataContext } from "~/store/GlobalState";
++import { markGettingStartedStep } from "~/lib/onboarding/getting-started";
+ import { ACTIONS } from "~/store/Actions";
+ import { useAgoraClient } from "~/hooks/buzz";
+ import { updateRecordingLayout } from "~/lib/buzz/update-recording-layout";
+@@ -1048,6 +1049,7 @@ export const useChannelBuzz = (options: UseBuzzOptions = {}) => {
+         }
+ 
+         setJoined(true);
++        markGettingStartedStep("buzz");
+         setJoining(false);
+         isJoiningInProgress.current = false;
+       } catch (err) {
+diff --git a/src/lib/onboarding/getting-started.test.mjs b/src/lib/onboarding/getting-started.test.mjs
+new file mode 100644
+index 0000000..ddfee5f
+--- /dev/null
++++ b/src/lib/onboarding/getting-started.test.mjs
+@@ -0,0 +1,59 @@
++import assert from "node:assert/strict";
++import test from "node:test";
++
++const {
++  gettingStartedKey,
++  parseProgress,
++  completedSteps,
++  shouldShowChecklist,
++  stepForMessagePath,
++} = await import("./getting-started.ts");
++
++test("key needs both org and user", () => {
++  assert.equal(gettingStartedKey("org1", "u1"), "zedu:getting-started:org1:u1");
++  assert.equal(gettingStartedKey("org1", null), null);
++  assert.equal(gettingStartedKey("", "u1"), null);
++});
++
++test("parseProgress ignores bad JSON and unknown steps", () => {
++  assert.deepEqual(parseProgress(null), { dismissed: false, done: {} });
++  assert.deepEqual(parseProgress("{not json"), { dismissed: false, done: {} });
++  assert.deepEqual(
++    parseProgress(
++      '{"dismissed":"yes","done":{"dm":true,"hack":true,"buzz":1}}'
++    ),
++    { dismissed: false, done: { dm: true } }
++  );
++});
++
++test("a profile photo counts as the photo step", () => {
++  const p = parseProgress('{"done":{"dm":true}}');
++  assert.deepEqual([...completedSteps(p, true)].sort(), ["dm", "photo"]);
++  assert.deepEqual([...completedSteps(p, false)], ["dm"]);
++});
++
++test("card shows until dismissed or all four steps are done", () => {
++  const none = parseProgress(null);
++  assert.equal(shouldShowChecklist(none, false), true);
++  assert.equal(
++    shouldShowChecklist(parseProgress('{"dismissed":true}'), false),
++    false
++  );
++  const three = parseProgress(
++    '{"done":{"channel_message":true,"dm":true,"buzz":true}}'
++  );
++  assert.equal(shouldShowChecklist(three, false), true);
++  assert.equal(shouldShowChecklist(three, true), false);
++});
++
++test("messages count for the right step by page", () => {
++  assert.equal(
++    stepForMessagePath("/acme/home/channels/123"),
++    "channel_message"
++  );
++  assert.equal(stepForMessagePath("/acme/dm/abc/def"), "dm");
++  assert.equal(stepForMessagePath("/acme/home/people/abc/dms"), "dm");
++  assert.equal(stepForMessagePath("/acme/colleagues/a/b"), "dm");
++  assert.equal(stepForMessagePath("/acme/later"), null);
++  assert.equal(stepForMessagePath(undefined), null);
++});
+diff --git a/src/lib/onboarding/getting-started.ts b/src/lib/onboarding/getting-started.ts
+new file mode 100644
+index 0000000..65bba44
+--- /dev/null
++++ b/src/lib/onboarding/getting-started.ts
+@@ -0,0 +1,129 @@
++/**
++ * "Getting started" checklist for new workspace members.
++ *
++ * Progress and the dismissed state are saved in this browser (localStorage),
++ * per organisation and per user. Saving them to the user's account is a
++ * follow-up for the backend.
++ */
++
++export type GettingStartedStep = "photo" | "channel_message" | "dm" | "buzz";
++
++export const GETTING_STARTED_STEPS: GettingStartedStep[] = [
++  "photo",
++  "channel_message",
++  "dm",
++  "buzz",
++];
++
++export type GettingStartedProgress = {
++  dismissed: boolean;
++  done: Partial<Record<GettingStartedStep, true>>;
++};
++
++export const GETTING_STARTED_CHANGED_EVENT = "zedu:getting-started-changed";
++
++const EMPTY: GettingStartedProgress = { dismissed: false, done: {} };
++
++export function gettingStartedKey(
++  orgId: string | null | undefined,
++  userId: string | null | undefined
++): string | null {
++  if (!orgId || !userId) return null;
++  return `zedu:getting-started:${orgId}:${userId}`;
++}
++
++/** Parse saved progress, ignoring anything malformed or unknown. */
++export function parseProgress(raw: string | null): GettingStartedProgress {
++  if (!raw) return { ...EMPTY, done: {} };
++  try {
++    const value = JSON.parse(raw);
++    const done: GettingStartedProgress["done"] = {};
++    for (const step of GETTING_STARTED_STEPS) {
++      if (value?.done?.[step] === true) done[step] = true;
++    }
++    return { dismissed: value?.dismissed === true, done };
++  } catch {
++    return { ...EMPTY, done: {} };
++  }
++}
++
++/** Steps done, counting the photo step as done when the user has a photo. */
++export function completedSteps(
++  progress: GettingStartedProgress,
++  hasPhoto: boolean
++): Set<GettingStartedStep> {
++  const done = new Set<GettingStartedStep>();
++  for (const step of GETTING_STARTED_STEPS) {
++    if (progress.done[step] || (step === "photo" && hasPhoto)) done.add(step);
++  }
++  return done;
++}
++
++/** The card shows until it is dismissed or every step is done. */
++export function shouldShowChecklist(
++  progress: GettingStartedProgress,
++  hasPhoto: boolean
++): boolean {
++  if (progress.dismissed) return false;
++  return completedSteps(progress, hasPhoto).size < GETTING_STARTED_STEPS.length;
++}
++
++function currentKey(): string | null {
++  if (typeof window === "undefined") return null;
++  try {
++    const orgId = window.localStorage.getItem("orgId");
++    const user = JSON.parse(window.localStorage.getItem("user") || "null");
++    return gettingStartedKey(orgId, user?.id ? String(user.id) : null);
++  } catch {
++    return null;
++  }
++}
++
++export function readGettingStarted(): GettingStartedProgress {
++  const key = currentKey();
++  if (!key) return { ...EMPTY, done: {} };
++  try {
++    return parseProgress(window.localStorage.getItem(key));
++  } catch {
++    return { ...EMPTY, done: {} };
++  }
++}
++
++function write(update: (p: GettingStartedProgress) => GettingStartedProgress) {
++  const key = currentKey();
++  if (!key) return;
++  try {
++    const next = update(parseProgress(window.localStorage.getItem(key)));
++    window.localStorage.setItem(key, JSON.stringify(next));
++  } catch {
++    return;
++  }
++  window.dispatchEvent(new Event(GETTING_STARTED_CHANGED_EVENT));
++}
++
++/** Record that the user did a step. Safe to call anywhere, any number of times. */
++export function markGettingStartedStep(step: GettingStartedStep): void {
++  const current = readGettingStarted();
++  if (current.done[step]) return;
++  write((p) => ({ ...p, done: { ...p.done, [step]: true } }));
++}
++
++export function dismissGettingStarted(): void {
++  write((p) => ({ ...p, dismissed: true }));
++}
++
++/** Which step a sent message counts for, from the page it was sent on. */
++export function stepForMessagePath(
++  pathname: string | null | undefined
++): GettingStartedStep | null {
++  if (!pathname) return null;
++  if (/\/home\/channels\//.test(pathname)) return "channel_message";
++  if (
++    /\/dm\//.test(pathname) ||
++    /\/home\/people\//.test(pathname) ||
++    /\/colleagues\//.test(pathname)
++  ) {
++    return "dm";
++  }
++  return null;
++}
+-- 
+2.43.0
+
